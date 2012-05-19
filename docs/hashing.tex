@@ -1,0 +1,240 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{a4paper}                   % \dots or a4paper or a5paper or \dots 
+%\geometry{landscape}                % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{color}
+\usepackage{url}
+%\usepackage{helvet} %To the untrained eye helvetica and arial are pretty much identical
+%\renewcommand{\familydefault}{\sfdefault}
+\usepackage[utf8x]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usetikzlibrary{calc}
+\usepackage{color}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{amsmath}
+\tikzstyle{block} = [draw,fill=blue!20,minimum size=2em]
+\tikzstyle{msg} = [draw,fill=orange!20,minimum size=2em]
+\tikzstyle{final} = [draw,fill=green!20,minimum size=2em]
+\tikzstyle{circle} = [draw,shape=circle,fill=red!20,minimum size=2em]
+\tikzstyle{branch}=[fill,shape=circle,minimum size=3pt,inner sep=0pt]
+\newcommand{\hash}[1]{#1}
+\newcommand{\Pad}{\text{Pad}}
+\newcommand{\HF}{HF}
+%opening
+\title{}
+\author{Jonathan Poulter}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+%\section{Properties of a hashing function}
+
+%it is easy to compute the hash value for any given message
+%it is infeasible to generate a message that has a given hash
+%it is infeasible to modify a message without changing the hash
+%it is infeasible to find two different messages with the same hash
+%\cite{http://tools.ietf.org/html/rfc4270}
+%MD5 First announced in 1991
+
+\section{Hashing a message}
+Hashing functions are able to take a variable length message and from it create a fixed length output, a hashing function will always hash the same input to the same output. Cryptographic hashing functions, here-in simply  have two distinct properties which mean they are used in a range of security applications, they should be collision-free and one-way.
+
+ The number of distinct possible outputs of a hashing function of fixed length $L$ is $2^L$ theoretical digests. The are clearly vastly more valid inputs as the input may be of an arbitrary length, therefore there are necessarily collisions, due to the pigeon-hole effect. It is important however that there is no determinable connection between the message, $m$, and the digest, $H(m)$. $H$ should generate sufficiently random digests such that given:
+\begin{itemize}
+  \item it should be hard to find some $m_1$ and $m_2$ where $m_1 \neq m_2$ and $H(m_1) = H(m_2)$, this is the \textbf{collision-free property}. This property is desirable because
+ \item given a digest $h$, it should be computationally infeasible to find any $m$ where $h = H(m)$. This is \textbf{first pre-image resistance}, this ensures it is difficult to retrieve a hashed message.
+ \item  an input $m_1$, and the digest $H(m_1)$ it should be infeasible to find a second message $m_2$ where $m_1 \neq m_2$ and $H(m_1) = H(m_2)$, this is \textbf{second pre-image resistance}. When a message and hash are found, it should be infeasible to find more messages which hash to the same value.
+\end{itemize}
+\label{sec:propeties_of_a_hash}
+
+\paragraph{The Random Oracle} An ideal fixed-length hashing function will play the role of a Random Oracle. acts as a theoretically optimal cryptographic primitive. In a Random Oracle, for a given input a truly random output is chosen and the input and corresponding output are recorded. If the same input message is presented to the oracle at a later point the oracle will return the previously generated value, however for each novel input presented a random corresponding output will be generated.\\
+
+\begin{figure}
+Some tikz image
+\caption{Reactions of the theoretical Random Oracle}
+\label{fig:random_oracle}
+\end{figure}
+
+
+There are many cryptographic hash functions, many vary in success at fulfilling the properties described. Yet they are integral cryptographic primitives on which many secure protocols are built. Successful cryptographic functions have many uses. In most operating systems user passwords are not stored in plain text, doing so would allow a user who maliciously gained access to the password store to know a user's password. Instead password hashes are stored and on login a user submits the password, which is hashed and verified against the stored hash, if these match then the user is authorised. {\color{red} or signing digital documents and distinguish two large messages without having to do explicit bit-wise comparison between each document, easily identify matches or inconsistencies. }
+
+\section{The Merkle-Damg\r{a}rd Construction}
+The aim is to build a hashing function $H$ which takes an abitrary length message to create a digest, $\{0,1\}^* \xrightarrow{H} \{0,1\}^n$ in the same fashion as a random oracle would. In practice creating a straight-forward hashing or block cipher to take arbitrary input is impractical, most modern hashing functions, take some compression-function and repeatedly apply it to successive blocks of the message.
+
+If there is a compression function $f$ is suitably provably random then it is possible to create a equally provably random $H$ by using Merkle-Damg\r{a}rd (MD) construction \cite{Merkle1979}. The function taken a message an splits it into blocks of equal length therefore the construct only works on messages which have length, $L$ where $$L \equiv 0 \text{ (mod } n).$$
+
+\subsection{MD-Compliant padding}
+It is therefore necessary to apply padding to the original message. In the initial proposal Merkle simply padded the message with zeros\cite{Merkle1979}. This is sufficient to keep the important property of the construct, if $f$ is collision resistant, so is $H$, but more generally MD-compliant padding follows the following three rules. For messages $m$, $m_1$ and $m_2$ in the possible message space.
+\begin{itemize}
+    \item $m$ must be a prefix of $\Pad(m)$.\\\emph{The padding must be applied to the end of the message.}
+    \item \textbf{if} $|m_1| = |m_2|$ \textbf{then} $|\Pad(m_1)| = |\Pad(m_2)|$.\\\emph{Two messages of the same length should pad to equal lengths also.}
+    \item \textbf{if} $|m_1| \neq |m_2|$ \textbf{then} last block of $\Pad(m_1) \neq$ last block of $\Pad(m_1)$.\\\emph{This is to prevent a very simple suffix collisions, demonstrated in section \ref{sec:md5pad}.}
+\end{itemize}
+
+\subsection{The General Hashing Function}
+Algorithm \ref{alg:hashing} shows the basic form of the MD construction. Though many modern hashing algorithms are based on the MD principle, including the SHA series \cite{fips} of hashes, these often make changes to the construct to side-step specific vulnerabilities in the original design. Here $f$ can be any collision-resistant compression function and it will take an initialising vector and the current message block, $b_i$ and updates the IV to produce $H$, a collision-resistant hashing function. Figure \ref{fig:mdpic} illustrates the blocking of the original message, the presence of the padding element and the processing of the IVs.
+
+\begin{algorithm}
+    \caption{The Merkle-Damg\r{a}rd construction}
+    \label{alg:hashing}
+\begin{algorithmic}
+    \Function{H}{$b_1$, \ldots, $b_l$}
+        \State $y \gets IV_0$  
+        \Comment{$IV_0$ is some initialising vector}
+        \For{$i = 1 \rightarrow l$}
+            \State $y \gets f(y, b_i)$
+        \EndFor
+        \State \Return $y$
+    \EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\begin{figure}
+    \begin{center}
+\begin{tikzpicture}[>=latex']
+
+% Draw blocks, inputs and outputs
+    \def\sp{1.5}
+    \node[circle] at (1, -1) (IV) {$IV_0$};
+    \node[msg, align = center, text width=12.5*\sp em] at (4*\sp, 1.5) (orig) {message};
+    \foreach \y in {1,2,3,4,5} {
+        \node[msg] at (\sp + \y*\sp,0) (input\y) {$b_\y$};
+        \node[block] at (\sp+\y*\sp,-1) (block\y) {$f$};
+        \draw[->] (input\y) -- (block\y);
+        \pgfmathtruncatemacro{\n}{\y + 1}
+        \draw[->]  (orig.south -| input\y) -- (input\y);
+    }
+    \foreach \y in {1,2,3,4} {
+        \coordinate (x) at ($(input\y)+(0.75,1)$);
+        \coordinate (y) at ($(x) + (0,1)$);
+        \draw[dashed]  (y) -- (x) ;
+    }
+    \node[msg] at (7*\sp, 0) (pad) {$b_{pad}$};
+    \node[block] at (7*\sp, -1) (final) {$f$};
+    \node[circle] at (8*\sp, -1) (hash) {Hash};
+    
+    % join up
+    \draw[->] (IV) -- (block1);
+    \draw[->] (block5) -- (final);
+    \draw[->] (final) -- (hash);
+    \draw[->] (pad) -- (final);
+    \foreach \y in {1,2,3,4} {
+        \pgfmathtruncatemacro{\n}{\y + 1}
+        \draw[->] (block\y.east) -- (block\n);
+    }
+    %\node[block] at (2,-6) (block6) {$f_6$};
+    %\draw[->] (block6.east) -- +(0.5,0);
+
+
+\end{tikzpicture}
+\end{center}
+\caption{The Merkle-Damg\r{a}rd construction, firstly the message is split into many blocks, each is sequentially processed by a compression function $f$ with some initial IV, $IV_0$, this produces new IV values, which are passed the the next usage of $f$. Finally the IVs are finalised using the MD padding block and the resulting IV is the given hash}
+\label{fig:mdpic}
+\end{figure}
+
+\subsection{Weaknesses of the MD Construction}
+As cryptanalysis has progressed the number of attacks on the MD construction itself has increased\cite{r1}\cite{r2}. It is important to note that these are not attacks on the specific compression functions used and direct attacks on MD and therefore would reduce the work needed to find collisions even using a random-oracle compression function.
+
+\subsection{Length-Extension Attack}
+The first weakness of the simple MD construction is that once a single collision has been found it is trivial to find more\cite{Sasaki2006}. 
+
+Let $H: \{0,1\}^* \rightarrow \{0,1\}^n$ be a hashing function and two distinct messages $m_1$ and $m_2$ are a collision pair, that is $H(m_1) = H(m_2)$, under the simple MD construction . Where $||$ is the concatenation operator.
+
+\section{The MD5 Hashing Function}
+\subsection{MD5 padding approach}
+\label{sec:md5pad}
+\subsection{The MD5 Compression Function}
+
+\section{Attacking MD5}
+An attack on a hacking function attempts to circumvent the secure properties that a hashed message should have: the one-way property and the collision-free property, discussed in section \ref{sec:propeties_of_a_hash}.
+A firt pre-image attack focuses on finding a message which has a particular hash-value, therefore circumventing the one-way property and tries to find $m$ where $\hash{m}$ is known. A further attack, a \emph{second-preimage} attack, where the original message $m_1$ is known, attempts to find another message $m_2$ where $\hash{m1} = \hash{m2}$.
+A collision attack attempts to find any two arbitrary messages $m1$ and $m2$, where $\hash{m1} = \hash{m2}$.
+
+\subsection{Collision Attacks}
+Hoffman,of the Network Working Group, in 2004 discussed that the dominant hashing attacks are collision attacks. Considering the `birthday problem' it is possible to estimate how many evaluations of the hash function it would take to find a collision in a given hashing function. Given a message space of  $2^n$, where $n = 128$ for MD5, the `birthday bound' for a binary string is $2^{(n/2)}$; $2^64$ for MD5. This is a theoretical bound and is reliant on the `perfection' of the hashing function, that is that each possible 128-bit output should be equally likely and there should be no inferable connection between input and output. 
+
+Although many collisions have now been found for the MD5 hash, the first publicly announced collision was from Dobbertin in 1996 \cite{dobbertin}. The MD5 function processes the message to be digested into 64-byte chunks (blocks) and the collision detailed by Dobbertin relies on using previous blocks to put initialisation vectors of the Merkle-Damgård construction into a specific state, from this state their are two distinct . This is not considered to be an attack on the full MD5 function; as a single message isn’t presented which causes a collision, but from 1996 the MD5 construction has been widely considered `broken’ with respect to being collision-resistant.
+
+\begin{figure}
+\begin{tabular}{|r|  l l l l|}
+	$IV_0'$ :& $A_0'$ = \texttt{0x12AC2375}& $B_0'$ = \texttt{0x3B341042}& $C_0'$ = \texttt{0x5F62B97C}& $D_0'$ = \texttt{0x4BA763ED}\\& & & &\\
+	$m_1$:& $X_0$ = \texttt{0xAA1DDa5E} & $X_4$ = \texttt{0x1006363E} & $X_8$ = \texttt{0x98A1FB19} & $X_{12}$ = \texttt{0x1326ED65} \\
+	& $X_1$ = \texttt{0xD97ABFF5} & $X_5$ = \texttt{0x7218209D} & $X_9$ = \texttt{0x1FAE44B0} & $X_{13}$ = \texttt{0xD93E0972} \\
+	& $X_2$ = \texttt{0x55F0E1C1} & $X_6$ = \texttt{0xE01C135D} & $X_{10}$ = \texttt{0x236BB992} & $X_{14}$ = \texttt{0xD458C868} \\
+	& $X_3$ = \texttt{0x32774244} & $X_7$ = \texttt{0x9DA64D0E} & $X_{11}$ = \texttt{0x6B7A669B} & $X_{15}$ = \texttt{0x6B72746A} \\
+	$m_2$: & \multicolumn{4}{c|}{$m1$ with the following change $m_2[X_{14}] = m_1[X_{14}] + 2^9$ }\\& & & &\\
+	MD5: & \multicolumn{4}{l|}{\texttt{0xBF90E670 0x752AF92B 0x9CE4E3E1 0xB12CF8DE}}
+\end{tabular}
+\caption{The collision demonstrated by Dobbertin\cite{dobbertin}. This demonstrates a ``collision of the compress function'' and not on the full hash itself as it relies on getting the algorithm into a point of using these IVs.}
+
+\end{figure}
+
+There have been many distributed project which have tasked themselves with finding MD5 collisions on the full algorithm and the first of this to report results was MD5CRK\cite{cryptoeprint:2004:199}. This project yielded two full colliding message pairs for the MD5 algorithm and also collisions for the MD4, RIPEMD and HAVAL-128 protocols. Each message presented for MD5 was made of two blocks, each first block was identical and has the effect of forcing the MD construction into using a fixed IV while processing the second block which can be given two distinct blocks and still produce the same hash. The MD5CRK algorithm spent the majority of its time finding a block which is able to generate an exploitable IV, after this is found it took very little time to produce a second block which is able to break collision-resistance.
+\begin{figure}
+	$IV_0$
+	m1
+
+	m2
+
+	md5
+\caption{}
+\end{figure}
+
+Tunneling
+
+The  \cite{Klima2006} presented tunnelling 
+
+The same group, 6 years later presented a single \cite{Xie2013}, presented the first public MD5 collision using a single block.
+\begin{figure}
+$M_0$
+0x6165300e,0x87a79a55,0xf7c60bd0,0x34febd0b,0x6503cf04,0x854f709e,0xfb0fc034,0x874c9c65, 0x2f94cc40,0x15a12deb,0x5c15f4a3,0x490786bb,0x6d658673,0xa4341f7d,0x8fd75920,0xefd18d5a
+0
+$M_0^*$
+0x6165300e,0x87a79a55,0xf7c60bd0,0x34febd0b,0x6503cf04,0x854f749e,0xfb0fc034,0x874c9c65, 0x2f94cc40,0x15a12deb,0xdc15f4a3,0x490786bb,0x6d658673,0xa4341f7d,0x8fd75920,0xefd18d5a
+MD5 0xf999c8c9 0xf7939ab6 0x84f3c481 0x1457cb23
+
+\end{figure}
+
+Implications of quickly being able to identify MD5 collisions.
+
+What existing uses of MD5 would be broken. What would a malicious user be able to do?
+What would we use instead of MD5?
+Why would it be better? -> bigger output domain $2^128$ for MD5, $2^512$ for SHA-2.
+Better S-box (catchy name for the compression function (I think)) http://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/SHA-2.svg/400px-SHA-2.svg.png
+
+
+
+\subsection{Pre-image attacks}
+
+
+Rainbow tables
+
+
+
+
+Resources:
+MIT Crypto lectures: http://cseweb.ucsd.edu/~mihir/papers/gb.pdf
+Merkle thesis: http://www.merkle.com/papers/Thesis1979.pdf 
+MD5 spec: http://tools.ietf.org/html/rfc1321 
+@misc{cryptoeprint:2004:199,
+    author = {Xiaoyun Wang  and Dengguo Feng and Xuejia Lai and Hongbo Yu},
+    title = {Collisions for Hash Functions MD4, MD5, HAVAL-128 and RIPEMD},
+    howpublished = {Cryptology ePrint Archive, Report 2004/199},
+    year = {2004},
+%    note = {\url{http://eprint.iacr.org/}},
+}
+\end{document}
