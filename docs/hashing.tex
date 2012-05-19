@@ -54,8 +54,8 @@ Hashing functions are able to take a variable length message and from it create 
  The number of distinct possible outputs of a hashing function of fixed length $L$ is $2^L$ theoretical digests. The are clearly vastly more valid inputs as the input may be of an arbitrary length, therefore there are necessarily collisions, due to the pigeon-hole effect. It is important however that there is no determinable connection between the message, $m$, and the digest, $H(m)$. $H$ should generate sufficiently random digests such that given:
 \begin{itemize}
   \item it should be hard to find some $m_1$ and $m_2$ where $m_1 \neq m_2$ and $H(m_1) = H(m_2)$, this is the \textbf{collision-free property}. This property is desirable because
- \item given a digest $h$, it should be computationally infeasible to find any $m$ where $h = H(m)$. This is \textbf{first pre-image resistance}, this ensures it is difficult to retrieve a hashed message.
- \item  an input $m_1$, and the digest $H(m_1)$ it should be infeasible to find a second message $m_2$ where $m_1 \neq m_2$ and $H(m_1) = H(m_2)$, this is \textbf{second pre-image resistance}. When a message and hash are found, it should be infeasible to find more messages which hash to the same value.
+  \item given a digest $h$, it should be computationally infeasible to find any $m$ where $h = H(m)$. This is \textbf{first pre-image resistance}, this ensures it is difficult to retrieve a hashed message.
+  \item  an input $m_1$, and the digest $H(m_1)$ it should be infeasible to find a second message $m_2$ where $m_1 \neq m_2$ and $H(m_1) = H(m_2)$, this is \textbf{second pre-image resistance}. When a message and hash are found, it should be infeasible to find more messages which hash to the same value.
 \end{itemize}
 \label{sec:propeties_of_a_hash}
 
