@@ -152,7 +152,7 @@ As cryptanalysis has progressed the number of attacks on the MD construction its
 \subsection{Length-Extension Attack}
 The first weakness of the simple MD construction is that once a single collision has been found it is trivial to find more\cite{Sasaki2006}. 
 
-Let $H: \{0,1\}^* \rightarrow \{0,1\}^n$ be a hashing function and two distinct messages $m_1$ and $m_2$ are a collision pair, that is $H(m_1) = H(m_2)$, under the simple MD construction . Where $||$ is the concatenation operator.
+Let $H: \{0,1\}^* \rightarrow \{0,1\}^n$ be a hashing function and two distinct messages $m_1$ and $m_2$ are a collision pair, that is $H(m_1) = H(m_2)$, under the simple MD construction it is trivial to generate more collisions by appending the collision-causing message with a common message $x$ producing $H(m_1||x)$, $H(m_2||x)$.  Where $||$ is the concatenation operator.
 
 \section{The MD5 Hashing Function}
 \subsection{MD5 padding approach}
@@ -165,7 +165,7 @@ A firt pre-image attack focuses on finding a message which has a particular hash
 A collision attack attempts to find any two arbitrary messages $m1$ and $m2$, where $\hash{m1} = \hash{m2}$.
 
 \subsection{Collision Attacks}
-Hoffman,of the Network Working Group, in 2004 discussed that the dominant hashing attacks are collision attacks. Considering the `birthday problem' it is possible to estimate how many evaluations of the hash function it would take to find a collision in a given hashing function. Given a message space of  $2^n$, where $n = 128$ for MD5, the `birthday bound' for a binary string is $2^{(n/2)}$; $2^64$ for MD5. This is a theoretical bound and is reliant on the `perfection' of the hashing function, that is that each possible 128-bit output should be equally likely and there should be no inferable connection between input and output. 
+Hoffman,of the Network Working Group, in 2004 discussed that the dominant hashing attacks are collision attacks. Considering the `birthday problem' it is possible to estimate how many evaluations of the hash function it would take to find a collision in a given hashing function. Given a message space of  $2^n$, where $n = 128$ for MD5, the `birthday bound' for a binary string is $2^{(n/2)}$; $2^{64}$ for MD5. This is a theoretical bound and is reliant on the `perfection' of the hashing function, that is that each possible 128-bit output should be equally likely and there should be no inferable connection between input and output. 
 
 Although many collisions have now been found for the MD5 hash, the first publicly announced collision was from Dobbertin in 1996 \cite{dobbertin}. The MD5 function processes the message to be digested into 64-byte chunks (blocks) and the collision detailed by Dobbertin relies on using previous blocks to put initialisation vectors of the Merkle-Damgård construction into a specific state, from this state their are two distinct . This is not considered to be an attack on the full MD5 function; as a single message isn’t presented which causes a collision, but from 1996 the MD5 construction has been widely considered `broken’ with respect to being collision-resistant.
 
@@ -219,9 +219,11 @@ Better S-box (catchy name for the compression function (I think)) http://upload.
 
 
 \subsection{Pre-image attacks}
+Producing and publishing a collision, may not present a security problem for many uses of hashes, producing a collision for a hashed password may be enough to enter a single system but doesn't necessarily give the attacker the plaintext password. The hashed information is still safe. Once victim to collision attacks most cryptographers will avoid a hash\cite{dontusemd5}, yet more crippling to the reputation of hashing function is a pre-image attack.
 
+For a given $H$: $\{0,1\}^* \rightarrow \{0,1\}^n$ a pre-image attack on a hash, $h$ requires retrieving $m$ where $h = H(m)$. For an ideal $H$ (which strictly models a Random Oracle) a brute-force attack is necessary, for MD5 this should take $2^{128}$ evaluations of the MD5 function for an arbitrary $m$.
 
-Rainbow tables
+Performing pre-image attacks on arbitrary hashes is clearly a time-consuming task it is therefore desirable to perform some pre-computation to make performing multiple attacks faster, this time-memory tradeoff 
 
 
 
