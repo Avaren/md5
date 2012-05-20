@@ -1,4 +1,5 @@
 \documentclass[a4paper,12pt]{article}
+\usepackage{listings}
 \usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
 \geometry{a4paper}                   % \dots or a4paper or a5paper or \dots 
 %\geometry{landscape}                % Activate for for rotated page geometry
@@ -20,6 +21,8 @@
 \usepackage{algorithmicx}
 \usepackage{amsmath}
 \tikzstyle{block} = [draw,fill=blue!20,minimum size=2em]
+\tikzstyle{p} = [draw,fill=green!20,minimum size=2em]
+\tikzstyle{h} = [draw,fill=yellow!20,minimum size=2em]
 \tikzstyle{msg} = [draw,fill=orange!20,minimum size=2em]
 \tikzstyle{final} = [draw,fill=green!20,minimum size=2em]
 \tikzstyle{circle} = [draw,shape=circle,fill=red!20,minimum size=2em]
@@ -223,9 +226,100 @@ Producing and publishing a collision, may not present a security problem for man
 
 For a given $H$: $\{0,1\}^* \rightarrow \{0,1\}^n$ a pre-image attack on a hash, $h$ requires retrieving $m$ where $h = H(m)$. For an ideal $H$ (which strictly models a Random Oracle) a brute-force attack is necessary, for MD5 this should take $2^{128}$ evaluations of the MD5 function for an arbitrary $m$.
 
-Performing pre-image attacks on arbitrary hashes is clearly a time-consuming task it is therefore desirable to perform some pre-computation to make performing multiple attacks faster, this time-memory tradeoff 
+Performing pre-image attacks on arbitrary hashes is clearly a time-consuming task it is therefore desirable to perform some pre-computation to make performing multiple attacks faster, this time-memory tradeoff attempts to save chains of hashes which cover all of a sub-space of the entire message-space. 
 
+For a hash $H$: $\{0,1\}^* \rightarrow \{0,1\}^n$ and a finite password set $P$; one example might be alpha-numeric strings less than 9 characters in length. The perfect data-structure is, for each password in $P$ store $p$ and $H(p)$, this is infeasible and would require storage $\text{O}(|P| \times n)$ bits of storage.
 
+\paragraph{Hash chain tables}
+Instead a reduction function $R$ is produced to take a hash and produce a new message from it, where $h \in H$ and $p \in P$. $R$ produces the mapping $h \rightarrow p$, this allows for an alternating chain of \emph{message to hash to message\dots} to be produced.
+
+To generate a hash-chain table\cite{Hellman1980}, a random set of passwords from P is selected. Each of these is hashed, then the resulting hash is gien to the reduction function. This is hashed, this process is repeated $k$ times, this is the chain length. Instead of storing the entire chain, simple the starting point and the last password are stored. 
+\begin{center}
+    password $\xrightarrow{H}$ \textsc{2867c6a4} $\xrightarrow{R}$ tadcaacc $\cdots$ nomzyaw$\xrightarrow{H}$ 3b5440e1 $\xrightarrow{R}$ bffbbecf
+\end{center}
+Here only `password' and `betaffbbecf' need to be stored to retrace every password seen while creating the table.
+
+To use the table to attack a hash $h$, firstly the hash is passed through the reduction function, to produce a candidate password $p$, if this $p$ appears in the set of endpoints of the table then the corresponding starting password is selected and the series of hash-reductions is applied until the original $h$ is seen, the $p$ which generated $h$ is the plaintext preceding $h$ in the chain. 
+It isn't guaranteed that this search will be successful as multiple hashes are likely to reduce to the same $p$, this is illustrated figure \ref{fig:col}.
+\begin{figure}
+    \begin{center}
+    \begin{tikzpicture}[>=latex']
+
+% Draw blocks, inputs and outputs
+    \def\sp{1.5}
+    \node[p] at (0,0) (hash0) {$s$};
+    \node[p] at (7*\sp,0) (hash7) {$e$};
+    \node[h] at (1*\sp,0) (hash1) {$h_1$};
+    \node[p] at (2*\sp,0) (hash2) {$p_2$};
+    \node[h] at (3*\sp,0) (hash3) {$h_2$};
+    \node[h] at (4*\sp,0) (hash4) {$h_{k-1}$};
+    \node[p] at (5*\sp,0) (hash5) {$p_{k}$};
+    \node[h] at (6*\sp,0) (hash6) {$h_{k}$};
+    \draw[->] (hash0) -- node[below] {\scriptsize{$R$}} (hash1);
+    \draw[->] (hash1) -- node[below] {\scriptsize{$H$}} (hash2);
+    \draw[->] (hash2) -- node[below] {\scriptsize{$R$}} (hash3);
+    \draw[->] (hash4) -- node[below] {\scriptsize{$R$}} (hash5);
+    \draw[->] (hash5) -- node[below] {\scriptsize{$H$}} (hash6);
+    \draw[->] (hash6) -- node[below] {\scriptsize{$R$}} (hash7);
+    \draw[->, dashed] (hash3) -- (hash4);
+
+    \node[h] at (6*\sp, 1) (hashp) {$h'_3$};
+    \node[p] at (5*\sp, 1) (hashpa) {$p'_3$};
+    \node[] at (4*\sp, 1) (hashpb) {};
+    \draw[->] (hashpa) -- (hashp);
+    \draw[->, dashed] (hashpb) -- (hashpa);
+
+    \draw[->] (hashp) -- node[above] {\scriptsize{$R$}} (hash7);
+    \draw[->] (hashpa) -- node[above] {\scriptsize{$H$}} (hashp);
+
+\end{tikzpicture}
+\end{center}
+\caption{Visualisation of a hash-chain table, this demonstrates how finding the endpoint $e$ does not neccessarily reveal the password as multiple hashes are likely to reduce to the same password in the password space.}
+\label{fig:col}
+\end{figure}
+
+As the number of chains created increases the likelihood of collisions increases also. A collision occurs when to chains produce the same value and continue hashing, this is likely to be due to a collision on the password, as hashing functions are generally considered to be collision resistant.
+\begin{figure}
+    \begin{center}
+    \begin{tikzpicture}[>=latex']
+
+% Draw blocks, inputs and outputs
+
+    \def\sp{1.5}
+    \node[p] at (0,0) (hash0) {$s$};
+    \node[p] at (7*\sp,0) (hash7) {$e$};
+    \node[h] at (1*\sp,0) (hash1) {$h_1$};
+    \node[p] at (2*\sp,0) (hash2) {$p_2$};
+    \node[h] at (3*\sp,0) (hash3) {$h_2$};
+    \node[h] at (4*\sp,0) (hash4) {$h_{k-1}$};
+    \node[p] at (5*\sp,0) (hash5) {$p_{k}$};
+    \node[h] at (6*\sp,0) (hash6) {$h_{k}$};
+    \draw[->] (hash0) -- node[below] {\scriptsize{$R$}} (hash1);
+    \draw[->] (hash1) -- node[below] {\scriptsize{$H$}} (hash2);
+    \draw[->] (hash2) -- node[below] {\scriptsize{$R$}} (hash3);
+    \draw[->] (hash4) -- node[below] {\scriptsize{$R$}} (hash5);
+    \draw[->] (hash5) -- node[below] {\scriptsize{$H$}} (hash6);
+    \draw[->] (hash6) -- node[below] {\scriptsize{$R$}} (hash7);
+    \draw[->, dashed] (hash3) -- (hash4);
+
+    \node[h] at (1*\sp, 1) (hashp) {$h'_1$};
+    \node[p] at (2*\sp, 1) (hashpa) {$p'_2$};
+    \node[p] at (0,1) (hashs) {$s'$};
+    \node[] at (3*\sp, 1) (hashpb) {};
+    \draw[->] (hashp) -- node[below]{\scriptsize{$H$}} (hashpa);
+    \draw[->] (hashpa) -- node[above]{\scriptsize{$R$}} (hash3);
+    \draw[->] (hashs) -- node[below]{\scriptsize{$R$}} (hashp);
+
+\end{tikzpicture}
+\end{center}
+\caption{This is a demonstration of two chains colliding, from the point where $H$ is applied to $p'_2$ no more useful work is performed by this chain.}
+\label{fig:col}
+\end{figure}
+
+Selecting an appropriate reduction function is a critical part of the design of a hash-chain table. It is important to know a lot about the possible possword domain as constraining the search to this area will be more useful and a smaller table may be generated covering the likely password space with less gaps, increasing the chance of finding the hash and its inverse. It is also important to generate the correct distribution of messages, it may be inefficient to create many short passwords if the space is up to 9 character for example. Needless to say designing an appropriate reduction function is difficult.
+
+\paragraph{Rainbow Tables}
+The largest shortcoming of simple hash-chain tables is that the number of collisions increases as the table size increases. To counter-act this in 2003 Oechslin\cite{Oechslin}.proposed a method for using multiple reduction function to drastically reduce the effect that a single collision has on the production of a chain in a table. This approach is called a rainbow table and is the dominant approach to launching pre-image attacks on hashign functions today.
 
 \section{Side Channel Attacks}
 A side channel attack is an attack on the physical implementation of the cryptosystem the main attacks are based on the fact there is 'effecient' ways to do certain mathmatical functions on a processor based on what they values they are processing this is usually branching dependent on wether the bit 0 or 1. 
@@ -245,4 +339,7 @@ MD5 spec: http://tools.ietf.org/html/rfc1321
     year = {2004},
 %    note = {\url{http://eprint.iacr.org/}},
 }
+
+\lstinputlisting[language=Python]{../md5.py}
+
 \end{document}
