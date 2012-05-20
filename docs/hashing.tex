@@ -225,9 +225,15 @@ Rainbow tables
 
 
 
+\section{Side Channel Attacks}
+A side channel attack is an attack on the physical implementation of the cryptosystem the main attacks are based on the fact there is 'effecient' ways to do certain mathmatical functions on a processor based on what they values they are processing this is usually branching dependent on wether the bit 0 or 1. 
+
+\subsection{Power Attacks}
+There are two types of Power Attacks using Simple Power Analysis(SPA) is just watching the trace of the power flowing through the processer while it is performing the functions this shows the load on the processer and from that work out what action is being done. Peter Kocher outlined using DES in ?? showing that you can see the distinct rounds in the DES structure. 
 
 Resources:
 MIT Crypto lectures: http://cseweb.ucsd.edu/~mihir/papers/gb.pdf
+Timing Attacks on Implementations of Diffie-Hellman, RSA, DSS, and Other Systems, P. Kocher.: http://www.cryptography.com/public/pdf/TimingAttacks.pdf
 Merkle thesis: http://www.merkle.com/papers/Thesis1979.pdf 
 MD5 spec: http://tools.ietf.org/html/rfc1321 
 @misc{cryptoeprint:2004:199,
